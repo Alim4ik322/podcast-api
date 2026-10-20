@@ -1,0 +1,6 @@
+server:
+  port: ${HTTP_PORT:8080}
+
+spring:
+  application:
+    name: ${APP_NAME:Podcast Hosting & Streaming API}

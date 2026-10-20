@@ -1,0 +1,325 @@
+openapi: 3.0.3
+info:
+  title: Podcast Hosting & Streaming API
+  description: Спецификация REST API для платформы хостинга и стриминга подкастов (Лабораторная работа №2)
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Локальный сервер разработки
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Вход в систему и получение токена
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /podcasts:
+    get:
+      summary: Получение списка подкастов
+      tags:
+        - Podcasts
+      parameters:
+        - name: category_id
+          in: query
+          description: Фильтр по ID категории
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PodcastResponse'
+    post:
+      summary: Создание нового подкаста (только для Author)
+      tags:
+        - Podcasts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePodcastRequest'
+      responses:
+        '201':
+          description: Подкаст успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PodcastResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный доступ
+
+  /podcasts/{podcastId}/episodes:
+    get:
+      summary: Получение списка эпизодов подкаста
+      tags:
+        - Episodes
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          description: UUID подкаста
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Список эпизодов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EpisodeResponse'
+    post:
+      summary: Добавление нового эпизода в подкаст
+      tags:
+        - Episodes
+      parameters:
+        - name: podcastId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEpisodeRequest'
+      responses:
+        '201':
+          description: Эпизод успешно добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EpisodeResponse'
+        '404':
+          description: Подкаст не найден
+
+  /episodes/{id}:
+    delete:
+      summary: Удаление эпизода по ID
+      tags:
+        - Episodes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID эпизода
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Эпизод успешно удален
+        '404':
+          description: Эпизод не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - username
+      properties:
+        email:
+          type: string
+          format: email
+          example: "author@example.com"
+        password:
+          type: string
+          format: password
+          example: "StrongPassword123!"
+        username:
+          type: string
+          example: "john_doe"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "author@example.com"
+        password:
+          type: string
+          format: password
+          example: "StrongPassword123!"
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          example: "Bearer"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        email:
+          type: string
+          example: "author@example.com"
+        username:
+          type: string
+          example: "john_doe"
+
+    CreatePodcastRequest:
+      type: object
+      required:
+        - title
+        - category_id
+      properties:
+        title:
+          type: string
+          example: "IT & Software Engineering Insights"
+        description:
+          type: string
+          example: "Подкаст о разработке ПО и архитектуре систем"
+        category_id:
+          type: integer
+          format: int64
+          example: 1
+
+    PodcastResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "987e6543-e21b-12d3-a456-426614174000"
+        title:
+          type: string
+          example: "IT & Software Engineering Insights"
+        description:
+          type: string
+          example: "Подкаст о разработке ПО и архитектуре систем"
+        cover_url:
+          type: string
+          example: "https://storage.example.com/covers/podcast1.jpg"
+
+    CreateEpisodeRequest:
+      type: object
+      required:
+        - title
+        - audio_url
+        - duration_seconds
+      properties:
+        title:
+          type: string
+          example: "Эпизод 1: Проектирование REST API"
+        description:
+          type: string
+          example: "Разбор принципов REST и OpenAPI 3.0"
+        audio_url:
+          type: string
+          example: "https://storage.example.com/audio/ep1.mp3"
+        duration_seconds:
+          type: integer
+          example: 2400
+
+    EpisodeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e89b-12d3-a456-426614174000"
+        title:
+          type: string
+          example: "Эпизод 1: Проектирование REST API"
+        audio_url:
+          type: string
+          example: "https://storage.example.com/audio/ep1.mp3"
+        duration_seconds:
+          type: integer
+          example: 2400
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "INVALID_INPUT"
+        message:
+          type: string
+          example: "Неверный формат адреса электронной почты"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-10-13T20:55:00Z"
