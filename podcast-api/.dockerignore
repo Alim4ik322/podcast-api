@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.env.local
+target/
+.idea/
+.vscode/
+*.iml
+*.md
+ARCHITECTURE.md
+README.md
+openapi.yaml
+mermaid-diagram.svg
+.DS_Store
